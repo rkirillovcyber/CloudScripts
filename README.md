@@ -80,9 +80,9 @@ A summary of the access policies in place can be found in the table below.
 |----------|---------------------|----------------------|
 | Jump Box | Yes                 | 47.156.12.41         |
 | ELK      | No                  | 10.1.0.0/16          |
-| DVWA1    | No  HTTP (port 80)  | 10.0.0.0/16          |
-| DVWA2    | No  HTTP (port 80)  | 10.0.0.0/16          |
-| DVWA3    | No  HTTP (port 80)  | 10.0.0.0/16          |
+| DVWA1    | HTTP (port 80)      | 10.0.0.0/16          |
+| DVWA2    | HTTP (port 80)      | 10.0.0.0/16          |
+| DVWA3    | HTTP (port 80)      | 10.0.0.0/16          |
 
 
 ### Elk Configuration
