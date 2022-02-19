@@ -34,81 +34,111 @@ This document contains the following details:
 
 ### Description of the Topology
 
-The main purpose of this network is to expose a load-balanced and monitored instance of DVWA, the D*mn Vulnerable Web Application.
+The main purpose of this network is to expose a load-balanced and monitored instance of DVWA, the "Damn Vulnerable Web Application".
 
-Load balancing ensures that the application will be highly _____, in addition to restricting _____ to the network.
-- _TODO: What aspect of security do load balancers protect? What is the advantage of a jump box?_
+Load balancing ensures that the application will be highly available, in addition to restricting inbound access to the network.
+The load balancer ensures that work to process incoming traffic will be shared by all vulnerable web servers. Access controls will ensure that only 
+authorized users — namely, ourselves — will be able to connect in the first place.
+The jump box sits in front of other machines and controls access to the other machines by allowing connections from specific IP addresses and forwarding to those machines.
 
-Integrating an ELK server allows users to easily monitor the vulnerable VMs for changes to the _____ and system _____.
-- _TODO: What does Filebeat watch for?_
-- _TODO: What does Metricbeat record?_
+Integrating an ELK server allows users to easily monitor the vulnerable VMs for changes to the file systems of the VMs on the network, as well as watch system metrics,
+such as CPU usage; attempted SSH logins; sudo escalation failures; etc.
+Filebeat monitors changes to the file systems, while Metricbeat records system metrics.
 
 The configuration details of each machine may be found below.
-_Note: Use the [Markdown Table Generator](http://www.tablesgenerator.com/markdown_tables) to add/remove values from the table_.
 
 | Name     | Function | IP Address | Operating System |
 |----------|----------|------------|------------------|
-| Jump Box | Gateway  | 10.0.0.1   | Linux            |
-| TODO     |          |            |                  |
-| TODO     |          |            |                  |
-| TODO     |          |            |                  |
+| Jump Box | Gateway  | 10.0.0.4   | Linux            |
+| DVWA1    | WebServer| 10.0.0.5   | Linux            |
+| DVWA2    | WebServer| 10.0.0.6   | Linux            |
+| DVWA3    | WebServer| 10.0.0.7   | Linux            |
+| ELK      | Monitor  | 10.1.0.4   | Linux            |
+
+In addition to the above, Azure has provisioned a load balancer in front of all web servers. 
+The load balancer's targets are organized into the following availability zones:
+
+Availability Zone 1: DVWA1
+Availability Zone 2: DVWA2
+Availability Zone 3: DVWA3
+
 
 ### Access Policies
 
 The machines on the internal network are not exposed to the public Internet. 
 
-Only the _____ machine can accept connections from the Internet. Access to this machine is only allowed from the following IP addresses:
-- _TODO: Add whitelisted IP addresses_
+Only the jump box machine can accept connections from the Internet. Access to this machine is only allowed from the following IP addresses: 47.156.12.41
 
-Machines within the network can only be accessed by _____.
-- _TODO: Which machine did you allow to access your ELK VM? What was its IP address?_
+Machines within the network can only be accessed from the joump box via SSH, and via firewall via load balancer by HTTP (port 80) only. 
+The DVWA1, DVWA2, and DVWA3 VMs send traffic to the ELK server.
 
 A summary of the access policies in place can be found in the table below.
 
 | Name     | Publicly Accessible | Allowed IP Addresses |
 |----------|---------------------|----------------------|
-| Jump Box | Yes/No              | 10.0.0.1 10.0.0.2    |
-|          |                     |                      |
-|          |                     |                      |
+| Jump Box | Yes                 | 47.156.12.41         |
+| ELK      | No                  | 10.0.0.1-254         |
+| DVWA1    | No  HTTP (port 80)  | 10.0.0.1-254         |
+| DVWA2    | No  HTTP (port 80)  | 10.0.0.1-254         |
+| DVWA3    | No  HTTP (port 80)  | 10.0.0.1-254         |
+
 
 ### Elk Configuration
 
-Ansible was used to automate configuration of the ELK machine. No configuration was performed manually, which is advantageous because...
-- _TODO: What is the main advantage of automating configuration with Ansible?_
+The ELK VM exposes an Elastic Stack instance. Docker is used to download and manage an ELK container.
+Rather than configure ELK manually, we opted to develop a reusable Ansible Playbook to accomplish the task.
+ 
+This playbook is duplicated below.
+![install-elk.yml](/ansible/install-elk.yml)
+To use this playbook, one must log into the Jump Box, then issue: ansible-playbook install_elk.yml elk. 
+This runs the install_elk.yml playbook on the elk host.
 
-The playbook implements the following tasks:
-- _TODO: In 3-5 bullets, explain the steps of the ELK installation play. E.g., install Docker; download image; etc._
-- ...
-- ...
+When ELK installs we run:
+sysadmin@elk:~$ sudo docker ps
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                                                                              NAMES
+842caa422ed8        sebp/elk            "/usr/local/bin/star…"   3 hours ago         Up 7 seconds          0.0.0.0:5044->5044/tcp, 0.0.0.0:5601->5601/tcp, 0.0.0.0:9200->9200/tcp, 9300/tcp   elk
+sysadmin@elk:~$
 
-The following screenshot displays the result of running `docker ps` after successfully configuring the ELK instance.
-
-**Note**: The following image link needs to be updated. Replace `docker_ps_output.png` with the name of your screenshot image file.  
-
-
-![TODO: Update the path with the name of your screenshot of docker ps output](Images/docker_ps_output.png)
 
 ### Target Machines & Beats
-This ELK server is configured to monitor the following machines:
-- _TODO: List the IP addresses of the machines you are monitoring_
-
+This ELK server is configured to monitor the DVWA1, DVWA2, and DVWA3 VMs, at 10.0.0.5, 10.0.0.6, and 10.0.0.7 respectively.
 We have installed the following Beats on these machines:
-- _TODO: Specify which Beats you successfully installed_
+
+Filebeat
+Metricbeat
 
 These Beats allow us to collect the following information from each machine:
-- _TODO: In 1-2 sentences, explain what kind of data each beat collects, and provide 1 example of what you expect to see. E.g., `Winlogbeat` collects Windows logs, which we use to track user logon events, etc._
+
+Filebeat: Filebeat detects changes to the filesystem. Specifically, we use it to collect Apache logs.
+Metricbeat: Metricbeat detects changes in system metrics, such as CPU usage. We use it to detect SSH login attempts, failed sudo escalations, and CPU/RAM statistics.
+The playbooks below install Filebeat and Metricbeat on the target hosts. 
+![filebeat-playbook.yml](/ansible/filebeat-playbook.yml)
+![metricbeat-playbook.yml](/ansible/metricbeat-playbook.yml)
+
 
 ### Using the Playbook
 In order to use the playbook, you will need to have an Ansible control node already configured. Assuming you have such a control node provisioned: 
 
 SSH into the control node and follow the steps below:
-- Copy the _____ file to _____.
-- Update the _____ file to include...
-- Run the playbook, and navigate to ____ to check that the installation worked as expected.
+- Copy the the playbook file to the Ansible Control Node.
+- Update the playbook file with correct information.
+- Next, you must create a hosts file to specify which VMs to run each playbook on. Run the commands below:
+$ cd /etc/ansible
 
-_TODO: Answer the following questions to fill in the blanks:_
-- _Which file is the playbook? Where do you copy it?_
-- _Which file do you update to make Ansible run the playbook on a specific machine? How do I specify which machine to install the ELK server on versus which to install Filebeat on?_
-- _Which URL do you navigate to in order to check that the ELK server is running?
+- Next, update entries in the hosts file:
+[webservers]
+10.0.0.5
+10.0.0.6
+10.0.0.7
 
-_As a **Bonus**, provide the specific commands the user will need to run to download the playbook, update the files, etc._
+[elk]
+10.1.0.4
+
+After this, the commands below run the playbook:
+$ cd /etc/ansible
+$ ansible-playbook install_elk.yml elk
+$ ansible-playbook install_filebeat.yml webservers
+$ ansible-playbook install_metricbeat.yml webservers
+
+To verify success, run: curl http://10.1.0.4:5601. 
+This is the address of Kibana. If the installation succeeded, this command should print HTML to the console.
