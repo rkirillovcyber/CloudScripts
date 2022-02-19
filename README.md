@@ -71,7 +71,7 @@ The machines on the internal network are not exposed to the public Internet.
 
 Only the jump box machine can accept connections from the Internet. Access to this machine is only allowed from the following IP addresses: 47.156.12.41
 
-Machines within the network can only be accessed from the jump box via SSH.  Also they be accessed via firewall via load balancer by HTTP (port 80) only. 
+Machines within the network can only be accessed from the jump box via SSH.  Also they can be accessed via firewall via load balancer by HTTP (port 80) only. 
 The DVWA1, DVWA2, and DVWA3 VMs send traffic to the ELK server.
 
 A summary of the access policies in place can be found in the table below.
@@ -160,4 +160,4 @@ $ ansible-playbook install_metricbeat.yml webservers
 
 Verify that you can load the ELK stack server from your browser at http://13.89.237.194:5601/app/kibana
  
-If everything is working correctly, you should see Kibano webpage.
+If everything is working correctly, you should see Kibana webpage.
