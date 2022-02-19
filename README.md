@@ -59,7 +59,9 @@ In addition to the above, Azure has provisioned a load balancer in front of all 
 The load balancer's targets are organized into the following availability zones:
 
 Availability Zone 1: DVWA1
+
 Availability Zone 2: DVWA2
+
 Availability Zone 3: DVWA3
 
 
@@ -69,7 +71,7 @@ The machines on the internal network are not exposed to the public Internet.
 
 Only the jump box machine can accept connections from the Internet. Access to this machine is only allowed from the following IP addresses: 47.156.12.41
 
-Machines within the network can only be accessed from the joump box via SSH, and via firewall via load balancer by HTTP (port 80) only. 
+Machines within the network can only be accessed from the jump box via SSH.  Also they be accessed via firewall via load balancer by HTTP (port 80) only. 
 The DVWA1, DVWA2, and DVWA3 VMs send traffic to the ELK server.
 
 A summary of the access policies in place can be found in the table below.
@@ -77,10 +79,10 @@ A summary of the access policies in place can be found in the table below.
 | Name     | Publicly Accessible | Allowed IP Addresses |
 |----------|---------------------|----------------------|
 | Jump Box | Yes                 | 47.156.12.41         |
-| ELK      | No                  | 10.0.0.1-254         |
-| DVWA1    | No  HTTP (port 80)  | 10.0.0.1-254         |
-| DVWA2    | No  HTTP (port 80)  | 10.0.0.1-254         |
-| DVWA3    | No  HTTP (port 80)  | 10.0.0.1-254         |
+| ELK      | No                  | 10.1.0.0/16          |
+| DVWA1    | No  HTTP (port 80)  | 10.0.0.0/16          |
+| DVWA2    | No  HTTP (port 80)  | 10.0.0.0/16          |
+| DVWA3    | No  HTTP (port 80)  | 10.0.0.0/16          |
 
 
 ### Elk Configuration
@@ -89,15 +91,13 @@ The ELK VM exposes an Elastic Stack instance. Docker is used to download and man
 Rather than configure ELK manually, we opted to develop a reusable Ansible Playbook to accomplish the task.
  
 This playbook is duplicated below.
+
 ![install-elk.yml](/ansible/install-elk.yml)
+
 To use this playbook, one must log into the Jump Box, then issue: ansible-playbook install_elk.yml elk. 
 This runs the install_elk.yml playbook on the elk host.
 
-When ELK installs we run:
-sysadmin@elk:~$ sudo docker ps
-CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                                                                              NAMES
-842caa422ed8        sebp/elk            "/usr/local/bin/star…"   3 hours ago         Up 7 seconds          0.0.0.0:5044->5044/tcp, 0.0.0.0:5601->5601/tcp, 0.0.0.0:9200->9200/tcp, 9300/tcp   elk
-sysadmin@elk:~$
+When ELK installs we run: sudo docker ps command to see the available container.
 
 
 ### Target Machines & Beats
@@ -105,14 +105,19 @@ This ELK server is configured to monitor the DVWA1, DVWA2, and DVWA3 VMs, at 10.
 We have installed the following Beats on these machines:
 
 Filebeat
+
 Metricbeat
 
 These Beats allow us to collect the following information from each machine:
 
 Filebeat: Filebeat detects changes to the filesystem. Specifically, we use it to collect Apache logs.
+
 Metricbeat: Metricbeat detects changes in system metrics, such as CPU usage. We use it to detect SSH login attempts, failed sudo escalations, and CPU/RAM statistics.
-The playbooks below install Filebeat and Metricbeat on the target hosts. 
+
+The playbooks below install Filebeat and Metricbeat on the target hosts.
+ 
 ![filebeat-playbook.yml](/ansible/filebeat-playbook.yml)
+
 ![metricbeat-playbook.yml](/ansible/metricbeat-playbook.yml)
 
 
@@ -122,23 +127,37 @@ In order to use the playbook, you will need to have an Ansible control node alre
 SSH into the control node and follow the steps below:
 - Copy the the playbook file to the Ansible Control Node.
 - Update the playbook file with correct information.
-- Next, you must create a hosts file to specify which VMs to run each playbook on. Run the commands below:
+- Next, you must create a hosts file to specify which VMs to run each playbook on. 
+
+Run the commands below:
 $ cd /etc/ansible
 
 - Next, update entries in the hosts file:
+
 [webservers]
+
 10.0.0.5
+
 10.0.0.6
+
 10.0.0.7
 
+
 [elk]
+
 10.1.0.4
 
 After this, the commands below run the playbook:
+
 $ cd /etc/ansible
+
 $ ansible-playbook install_elk.yml elk
+
 $ ansible-playbook install_filebeat.yml webservers
+
 $ ansible-playbook install_metricbeat.yml webservers
 
-To verify success, run: curl http://10.1.0.4:5601. 
-This is the address of Kibana. If the installation succeeded, this command should print HTML to the console.
+
+Verify that you can load the ELK stack server from your browser at http://13.89.237.194:5601/app/kibana
+ 
+If everything is working correctly, you should see Kibano webpage.
